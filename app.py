@@ -2,7 +2,7 @@ import jinja2
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-import pprint
+from pprint import PrettyPrinter
 import pytz
 import requests
 import sqlite3
@@ -23,18 +23,20 @@ app = Flask(__name__)
 
 # Get the API key from the '.env' file
 load_dotenv()
-API_KEY = os.getenv('API_KEY')
-
+API_KEY = os.getenv("API_KEY")
 
 # Settings for image endpoint
 # Written with help from http://dataviztalk.blogspot.com/2016/01/serving-matplotlib-plot-that-follows.html
-matplotlib.use('agg')
-plt.style.use('ggplot')
+matplotlib.use("agg")
+plt.style.use("ggplot")
+pp = PrettyPrinter(depth=4)
 
-my_loader = jinja2.ChoiceLoader([
-    app.jinja_loader,
-    jinja2.FileSystemLoader('data'),
-])
+my_loader = jinja2.ChoiceLoader(
+    [
+        app.jinja_loader,
+        jinja2.FileSystemLoader("data"),
+    ]
+)
 app.jinja_loader = my_loader
 
 
@@ -42,131 +44,139 @@ app.jinja_loader = my_loader
 ## ROUTES
 ################################################################################
 
-@app.route('/')
+
+@app.route("/")
 def home():
     """Displays the homepage with forms for current or historical data."""
     context = {
-        'min_date': (datetime.now() - timedelta(days=5)),
-        'max_date': datetime.now()
+        "min_date": (datetime.now() - timedelta(days=5)),
+        "max_date": datetime.now(),
     }
-    return render_template('home.html', **context)
+    return render_template("home.html", **context)
+
 
 def get_letter_for_units(units):
     """Returns a shorthand letter for the given units."""
-    return 'F' if units == 'imperial' else 'C' if units == 'metric' else 'K'
+    return "F" if units == "imperial" else "C" if units == "metric" else "K"
 
-@app.route('/results')
+
+@app.route("/results")
 def results():
     """Displays results for current weather conditions."""
-    # TODO: Use 'request.args' to retrieve the city & units from the query
-    # parameters.
-    city = ''
-    units = ''
 
-    url = 'http://api.openweathermap.org/data/2.5/weather'
-    params = {
-        # TODO: Enter query parameters here for the 'appid' (your api key),
-        # the city, and the units (metric or imperial).
-        # See the documentation here: https://openweathermap.org/current
+    city = request.args.get("city")
+    units = request.args.get("units")
+    zone = request.args.get("zone")
 
-    }
+    url = "http://api.openweathermap.org/data/2.5/weather"
+    params = {"appid": API_KEY, "q": city, "units": units}
 
     result_json = requests.get(url, params=params).json()
 
     # Uncomment the line below to see the results of the API call!
     # pp.pprint(result_json)
 
-    # TODO: Replace the empty variables below with their appropriate values.
-    # You'll need to retrieve these from the result_json object above.
+    sunrise = get_zone_time(result_json["sys"]["sunrise"], zone)
+    sunset = get_zone_time(result_json["sys"]["sunset"], zone)
 
-    # For the sunrise & sunset variables, I would recommend to turn them into
-    # datetime objects. You can do so using the `datetime.fromtimestamp()` 
-    # function.
     context = {
-        'date': datetime.now(),
-        'city': '',
-        'description': '',
-        'temp': '',
-        'humidity': '',
-        'wind_speed': '',
-        'sunrise': '',
-        'sunset': '',
-        'units_letter': get_letter_for_units(units)
+        "date": datetime.now(),
+        "city": result_json["name"],
+        "description": result_json["weather"][0]["description"],
+        "temp": result_json["main"]["temp"],
+        "humidity": result_json["main"]["humidity"],
+        "wind_speed": result_json["wind"]["speed"],
+        "sunrise": sunrise,
+        "sunset": sunset,
+        "units_letter": get_letter_for_units(units),
     }
 
-    return render_template('results.html', **context)
+    return render_template("results.html", **context)
+
+
+def get_zone_time(epoch, zone):
+    if zone == "UTC":
+        UTC = pytz.timezone("UTC")
+        time = datetime.fromtimestamp(epoch).astimezone(UTC).strftime("%I:%M %p")
+    else:
+        time = datetime.fromtimestamp(epoch).strftime("%I:%M %p")
+
+    return f"{time}, {zone}"
+
 
 def get_min_temp(results):
     """Returns the minimum temp for the given hourly weather objects."""
-    # TODO: Fill in this function to return the minimum temperature from the
-    # hourly weather data.
-    pass
+    min = results[0]["temp"]
+    for day in results:
+        if day["temp"] < min:
+            min = day["temp"]
+    return min
+
 
 def get_max_temp(results):
     """Returns the maximum temp for the given hourly weather objects."""
-    # TODO: Fill in this function to return the maximum temperature from the
-    # hourly weather data.
-    pass
+    max = results[0]["temp"]
+    for day in results:
+        if day["temp"] > max:
+            max = day["temp"]
+    return max
+
 
 def get_lat_lon(city_name):
-    geolocator = Nominatim(user_agent='Weather Application')
+    geolocator = Nominatim(user_agent="Weather Application")
     location = geolocator.geocode(city_name)
     if location is not None:
         return location.latitude, location.longitude
     return 0, 0
 
 
-@app.route('/historical_results')
+@app.route("/historical_results")
 def historical_results():
     """Displays historical weather forecast for a given day."""
-    # TODO: Use 'request.args' to retrieve the city & units from the query
-    # parameters.
-    city = ''
-    date = '2020-08-26'
-    units = ''
-    date_obj = datetime.strptime(date, '%Y-%m-%d')
-    date_in_seconds = date_obj.strftime('%s')
-
+    city = request.args.get("city")
+    date = request.args.get("date")
+    units = request.args.get("units")
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
+    date_in_seconds = int(date_obj.timestamp())
     latitude, longitude = get_lat_lon(city)
 
-    url = 'http://api.openweathermap.org/data/2.5/onecall/timemachine'
+    url = "http://api.openweathermap.org/data/2.5/onecall/timemachine"
     params = {
-        # TODO: Enter query parameters here for the 'appid' (your api key),
-        # latitude, longitude, units, & date (in seconds).
-        # See the documentation here (scroll down to "Historical weather data"):
-        # https://openweathermap.org/api/one-call-api
-        
+        "lat": latitude,
+        "lon": longitude,
+        "units": units,
+        "dt": date_in_seconds,
+        "appid": API_KEY,
     }
 
     result_json = requests.get(url, params=params).json()
 
     # Uncomment the line below to see the results of the API call!
-    # pp.pprint(result_json)
+    pp.pprint(result_json)
 
-    result_current = result_json['current']
-    result_hourly = result_json['hourly']
+    result_current = result_json["current"]
+    result_hourly = result_json["hourly"]
 
-    # TODO: Replace the empty variables below with their appropriate values.
-    # You'll need to retrieve these from the 'result_current' object above.
     context = {
-        'city': '',
-        'date': date_obj,
-        'lat': latitude,
-        'lon': longitude,
-        'units': '',
-        'units_letter': '', # should be 'C', 'F', or 'K'
-        'description': '',
-        'temp': '',
-        'min_temp': get_min_temp(result_hourly),
-        'max_temp': get_max_temp(result_hourly)
+        "city": city,
+        "date": date_obj,
+        "lat": latitude,
+        "lon": longitude,
+        "units": units,
+        "units_letter": get_letter_for_units(units),
+        "description": result_current["weather"][0]["description"],
+        "temp": result_current["temp"],
+        "min_temp": get_min_temp(result_hourly),
+        "max_temp": get_max_temp(result_hourly),
     }
 
-    return render_template('historical_results.html', **context)
+    return render_template("historical_results.html", **context)
 
 
 ################################################################################
 ## IMAGES
 ################################################################################
+
 
 def create_image_file(xAxisData, yAxisData, xLabel, yLabel):
     """
@@ -181,9 +191,10 @@ def create_image_file(xAxisData, yAxisData, xLabel, yLabel):
     img = BytesIO()
     fig.savefig(img)
     img.seek(0)
-    return send_file(img, mimetype='image/png')
+    return send_file(img, mimetype="image/png")
 
-@app.route('/graph/<lat>/<lon>/<units>/<date>')
+
+@app.route("/graph/<lat>/<lon>/<units>/<date>")
 def graph(lat, lon, units, date):
     """
     Returns a line graph with data for the given location & date.
@@ -192,32 +203,28 @@ def graph(lat, lon, units, date):
     @param units The units (imperial, metric, or kelvin)
     @param date The date, in the format %Y-%m-%d.
     """
-    date_obj = datetime.strptime(date, '%Y-%m-%d')
-    date_in_seconds = date_obj.strftime('%s')
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
+    date_in_seconds = date_obj.strftime("%s")
 
-
-    url = 'http://api.openweathermap.org/data/2.5/onecall/timemachine'
+    url = "http://api.openweathermap.org/data/2.5/onecall/timemachine"
     params = {
-        'appid': API_KEY,
-        'lat': lat,
-        'lon': lon,
-        'units': units,
-        'dt': date_in_seconds
+        "appid": API_KEY,
+        "lat": lat,
+        "lon": lon,
+        "units": units,
+        "dt": date_in_seconds,
     }
     result_json = requests.get(url, params=params).json()
 
-    hour_results = result_json['hourly']
+    hour_results = result_json["hourly"]
 
     hours = range(24)
-    temps = [r['temp'] for r in hour_results]
+    temps = [r["temp"] for r in hour_results]
     image = create_image_file(
-        hours,
-        temps,
-        'Hour',
-        f'Temperature ({get_letter_for_units(units)})'
+        hours, temps, "Hour", f"Temperature ({get_letter_for_units(units)})"
     )
     return image
 
 
-if __name__ == '__main__':
-    app.run()
+if __name__ == "__main__":
+    app.run(debug=True)
