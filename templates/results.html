@@ -4,7 +4,7 @@
 <section>
     <h1>Weather in {{city}}</h1>
     <p>on {{date.strftime("%B %d, %Y")}} at {{date.strftime("%-I:%M %p, %Z")}}</p>
-
+    <img src="http://openweathermap.org/img/wn/{{icon}}@2x.png" />
     <ul>
         <li>Temperature: {{temp}}° {{units_letter}}</li>
         <li>Description: {{description}}</li>

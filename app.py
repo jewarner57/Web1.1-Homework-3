@@ -93,6 +93,7 @@ def results():
         "sunrise": sunrise_time,
         "sunset": sunset_time,
         "units_letter": get_letter_for_units(units),
+        "icon": result_json["weather"][0]["icon"],
     }
 
     return render_template("results.html", **context)
@@ -161,7 +162,7 @@ def historical_results():
     result_json = requests.get(url, params=params).json()
 
     # Uncomment the line below to see the results of the API call!
-    pp.pprint(result_json)
+    # pp.pprint(result_json)
 
     result_current = result_json["current"]
     result_hourly = result_json["hourly"]
@@ -177,6 +178,7 @@ def historical_results():
         "temp": result_current["temp"],
         "min_temp": get_min_temp(result_hourly),
         "max_temp": get_max_temp(result_hourly),
+        "icon": result_current["weather"][0]["icon"],
     }
 
     return render_template("historical_results.html", **context)
