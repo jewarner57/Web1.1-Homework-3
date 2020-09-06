@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_file
 from geopy.geocoders import Nominatim
+from timezonefinder import TimezoneFinder
 from io import BytesIO
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
@@ -66,7 +67,6 @@ def results():
 
     city = request.args.get("city")
     units = request.args.get("units")
-    zone = request.args.get("zone")
 
     url = "http://api.openweathermap.org/data/2.5/weather"
     params = {"appid": API_KEY, "q": city, "units": units}
@@ -76,32 +76,41 @@ def results():
     # Uncomment the line below to see the results of the API call!
     # pp.pprint(result_json)
 
-    sunrise = get_zone_time(result_json["sys"]["sunrise"], zone)
-    sunset = get_zone_time(result_json["sys"]["sunset"], zone)
+    lat = result_json["coord"]["lat"]
+    lon = result_json["coord"]["lon"]
+
+    sunrise_time = get_zone_time(result_json["sys"]["sunrise"], lat, lon)
+    sunset_time = get_zone_time(result_json["sys"]["sunset"], lat, lon)
+    current_time = get_zone_time(datetime.now().timestamp(), lat, lon)
 
     context = {
-        "date": datetime.now(),
+        "date": current_time,
         "city": result_json["name"],
         "description": result_json["weather"][0]["description"],
         "temp": result_json["main"]["temp"],
         "humidity": result_json["main"]["humidity"],
         "wind_speed": result_json["wind"]["speed"],
-        "sunrise": sunrise,
-        "sunset": sunset,
+        "sunrise": sunrise_time,
+        "sunset": sunset_time,
         "units_letter": get_letter_for_units(units),
     }
 
     return render_template("results.html", **context)
 
 
-def get_zone_time(epoch, zone):
-    if zone == "UTC":
-        UTC = pytz.timezone("UTC")
-        time = datetime.fromtimestamp(epoch).astimezone(UTC).strftime("%I:%M %p")
-    else:
-        time = datetime.fromtimestamp(epoch).strftime("%I:%M %p")
+def get_zone_time(date, lat, lon):
+    """Adds a timezone value to a datetime from given location"""
 
-    return f"{time}, {zone}"
+    tf = TimezoneFinder()
+    # get timezone string from latitude and longitude
+    timezone_str = tf.timezone_at(lng=lon, lat=lat)
+    # create pytz timezone object
+    timezone = pytz.timezone(timezone_str)
+
+    # create the time from the date object and add the timezone
+    time = datetime.fromtimestamp(date).astimezone(timezone)
+
+    return time
 
 
 def get_min_temp(results):

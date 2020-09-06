@@ -3,15 +3,15 @@
 
 <section>
     <h1>Weather in {{city}}</h1>
-    <p>on {{date.strftime("%B %d, %Y")}} at {{date.now().strftime("%-I:%M %p")}}</p>
+    <p>on {{date.strftime("%B %d, %Y")}} at {{date.strftime("%-I:%M %p, %Z")}}</p>
 
     <ul>
         <li>Temperature: {{temp}}° {{units_letter}}</li>
         <li>Description: {{description}}</li>
         <li>Humidity: {{humidity}}%</li>
         <li>Wind speed: {{wind_speed}} miles/hour</li>
-        <li>Sunrise: {{sunrise}}</li>
-        <li>Sunset: {{sunset}}</li>
+        <li>Sunrise: {{sunrise.strftime("%I:%M %p, %Z")}}</li>
+        <li>Sunset: {{sunset.strftime("%I:%M %p, %Z")}}</li>
     </ul>
 
 
