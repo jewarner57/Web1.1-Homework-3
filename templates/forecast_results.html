@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<section class={{image}}>
+    <div>
+        <h1>Current Weather in {{city}} </h1>
+        <p><u>{{description.title()}}</u> on {{date.strftime("%B %d, %Y")}} at {{date.strftime("%-I:%M %p, %Z")}}</p>
+
+        <img src="http://openweathermap.org/img/wn/{{icon}}@2x.png" />
+        <h1>{{temp}}° {{units_letter}}</h1>
+
+    </div>
+
+    {% for day in day_list %}
+    <div class="daily_forecast">
+        <h3>{{day["date"].strftime("%A, %b %d, %Y")}}</h3>
+        <img src="http://openweathermap.org/img/wn/{{day['icon']}}@2x.png" />
+        <p>{{day["description"].title()}}</p>
+        <p>High: {{day['max_temp']}}° {{units_letter}}</p>
+        <p>Low: {{day['min_temp']}}° {{units_letter}}</p>
+    </div>
+    {% endfor %}
+
+</section>
+{% endblock %}

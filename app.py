@@ -146,6 +146,33 @@ def get_background_image(icon):
     return image_name
 
 
+def get_daily_stats(days):
+    """Takes an array of daily whether objects and
+    returns an array of simplified weather info"""
+
+    days_info = []
+    day_list = days
+
+    # remove the first day of the forcast since it is the current day
+    day_list.pop(0)
+
+    for day in day_list:
+
+        date = datetime.fromtimestamp(day["dt"])
+
+        days_info.append(
+            {
+                "min_temp": day["temp"]["min"],
+                "max_temp": day["temp"]["max"],
+                "icon": day["weather"][0]["icon"],
+                "description": day["weather"][0]["description"],
+                "date": date,
+            }
+        )
+
+    return days_info
+
+
 def get_min_temp(results):
     """Returns the minimum temp for the given hourly weather objects."""
     min = results[0]["temp"]
@@ -222,6 +249,56 @@ def historical_results():
 
     except (ValueError, KeyError):
         context = {"error": "The date you entered is not valid"}
+        result = render_template("error.html", **context)
+
+    return result
+
+
+@app.route("/forecast_results")
+def forecast_results():
+    try:
+        """Displays the 8 day weather forecast for the given location"""
+        city = request.args.get("city")
+        units = request.args.get("units")
+        latitude, longitude = get_lat_lon(city)
+
+        url = "http://api.openweathermap.org/data/2.5/onecall?"
+        params = {
+            "lat": latitude,
+            "lon": longitude,
+            "units": units,
+            "exclude": "hourly, minutely",
+            "appid": API_KEY,
+        }
+
+        result_json = requests.get(url, params=params).json()
+        result_current = result_json["current"]
+        result_daily = result_json["daily"]
+        day_list = get_daily_stats(result_daily)
+
+        # Uncomment the line below to see the results of the API call!
+        # p.pprint(result_json)
+
+        current_time = get_zone_time(datetime.now().timestamp(), latitude, longitude)
+
+        icon = result_current["weather"][0]["icon"]
+        weather_image = get_background_image(icon)
+
+        context = {
+            "date": current_time,
+            "city": city,
+            "description": result_current["weather"][0]["description"],
+            "temp": result_current["temp"],
+            "units_letter": get_letter_for_units(units),
+            "icon": icon,
+            "image": weather_image,
+            "day_list": day_list,
+        }
+
+        result = render_template("forecast_results.html", **context)
+
+    except (ValueError, KeyError):
+        context = {"error": "The city name you entered was not found."}
         result = render_template("error.html", **context)
 
     return result

@@ -29,6 +29,13 @@ section > div {
     text-align: center;
 }
 
+.daily_forecast {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
 fieldset {
     border: 1px solid #000;
 }

@@ -84,4 +84,40 @@
     </form>
 </section>
 
+<section class="weather-form">
+    <form action="forecast_results" method="GET">
+        <h2>See Forecast Data</h1>
+            <fieldset>
+                <legend>Please enter your information:</legend>
+
+                <p>
+                    <label>
+                        Please enter your city: <br>
+                        <input type="text" name="city">
+                    </label>
+                </p>
+
+                <p>
+                    Please choose your desired units: <br>
+                    <label>
+                        <input type="radio" name="units" value="metric">
+                        Celsius
+                    </label><br>
+                    <label>
+                        <input type="radio" name="units" value="imperial">
+                        Fahrenheit
+                    </label><br>
+                    <label>
+                        <input type="radio" name="units" value="kelvin">
+                        Kelvin
+                    </label>
+                </p>
+
+                <p>
+                    <input type="submit" value="Submit">
+                </p>
+            </fieldset>
+    </form>
+</section>
+
 {% endblock content %}
