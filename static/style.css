@@ -13,9 +13,20 @@ main > section {
     background-color: #fff;
     border: 1px solid #007a99;
     box-shadow: 5px 5px 5px #999;
-    padding: 20px;
     margin-top: 20px;
+    padding: 20px;
     width: 100%;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+section > div {
+    background-color: rgba(52, 73, 83, 0.8);
+    padding: 20px;
+    margin: 20px;
+    color: white;
+    border-radius: 20px;
+    text-align: center;
 }
 
 fieldset {
@@ -29,5 +40,31 @@ h1 a {
 
 .error {
     text-align: center;
-    color: red;
+}
+
+/* Weather Backgrounds*/
+/* All photos taken with permission from unsplash.com */
+
+.clear {
+    background-image: url("./images/clear.jpeg");
+}
+
+.cloudy {
+    background-image: url("./images/cloudy.jpeg");
+}
+
+.rainy {
+    background-image: url("./images/showers.jpeg");
+}
+
+.thunderstorm {
+    background-image: url("./images/thunderstorm.jpeg");
+}
+
+.snowy {
+    background-image: url("./images/snowy.jpeg");
+}
+
+.misty {
+    background-image: url("./images/misty.jpeg");
 }

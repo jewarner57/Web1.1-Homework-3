@@ -84,6 +84,9 @@ def results():
         sunset_time = get_zone_time(result_json["sys"]["sunset"], lat, lon)
         current_time = get_zone_time(datetime.now().timestamp(), lat, lon)
 
+        icon = result_json["weather"][0]["icon"]
+        weather_image = get_background_image(icon)
+
         context = {
             "date": current_time,
             "city": result_json["name"],
@@ -94,7 +97,8 @@ def results():
             "sunrise": sunrise_time,
             "sunset": sunset_time,
             "units_letter": get_letter_for_units(units),
-            "icon": result_json["weather"][0]["icon"],
+            "icon": icon,
+            "image": weather_image,
         }
 
         result = render_template("results.html", **context)
@@ -118,6 +122,28 @@ def get_zone_time(date, lat, lon):
     time = datetime.fromtimestamp(date).astimezone(timezone)
 
     return time
+
+
+def get_background_image(icon):
+    """Finds a weather image name corresponding to
+    the given openwhethermap icon"""
+
+    # set misty as the default image
+    image_name = "misty"
+
+    # find the weather image name
+    if int(icon[:2]) == 1:
+        image_name = "clear"
+    elif int(icon[:2]) > 1 and int(icon[:2]) < 9:
+        image_name = "cloudy"
+    elif int(icon[:2]) > 8 and int(icon[:2]) < 11:
+        image_name = "rainy"
+    elif int(icon[:2]) == 11:
+        image_name = "thunderstorm"
+    elif int(icon[:2]) == 13:
+        image_name = "snowy"
+
+    return image_name
 
 
 def get_min_temp(results):
@@ -174,6 +200,9 @@ def historical_results():
         result_current = result_json["current"]
         result_hourly = result_json["hourly"]
 
+        icon = result_current["weather"][0]["icon"]
+        weather_image = get_background_image(icon)
+
         context = {
             "city": city,
             "date": date_obj,
@@ -185,12 +214,13 @@ def historical_results():
             "temp": result_current["temp"],
             "min_temp": get_min_temp(result_hourly),
             "max_temp": get_max_temp(result_hourly),
-            "icon": result_current["weather"][0]["icon"],
+            "icon": icon,
+            "image": weather_image,
         }
 
         result = render_template("historical_results.html", **context)
 
-    except ValueError:
+    except (ValueError, KeyError):
         context = {"error": "The date you entered is not valid"}
         result = render_template("error.html", **context)
 

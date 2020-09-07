@@ -1,19 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<section>
-    <h1>Weather in {{city}}</h1>
-    <p>on {{date.strftime("%B %d, %Y")}} at {{date.strftime("%-I:%M %p, %Z")}}</p>
-    <img src="http://openweathermap.org/img/wn/{{icon}}@2x.png" />
-    <ul>
-        <li>Temperature: {{temp}}° {{units_letter}}</li>
-        <li>Description: {{description}}</li>
-        <li>Humidity: {{humidity}}%</li>
-        <li>Wind speed: {{wind_speed}} miles/hour</li>
-        <li>Sunrise: {{sunrise.strftime("%I:%M %p, %Z")}}</li>
-        <li>Sunset: {{sunset.strftime("%I:%M %p, %Z")}}</li>
-    </ul>
+<section class={{image}}>
+    <div>
+        <h1>Weather in {{city}} </h1>
+        <p><u>{{description}}</u> on {{date.strftime("%B %d, %Y")}} at {{date.strftime("%-I:%M %p, %Z")}}</p>
 
+        <img src="http://openweathermap.org/img/wn/{{icon}}@2x.png" />
+        <h1>{{temp}}° {{units_letter}}</h1>
+
+    </div>
+    <div>
+        <p>Humidity: {{humidity}}%</p>
+        <p>Wind speed: {{wind_speed}} miles/hour</p>
+        <p>Sunrise: {{sunrise.strftime("%I:%M %p, %Z")}}
+        <p>
+        <p>Sunset: {{sunset.strftime("%I:%M %p, %Z")}}</p>
+    </div>
 
 </section>
 {% endblock %}

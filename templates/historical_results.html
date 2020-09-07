@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<section class="weather-form">
-    <h1>Weather in {{city}}</h1>
-    <p>on {{date.strftime("%B %d, %Y")}}</p>
+<section class={{image}}>
+    <div>
+        <h1>Weather in {{city}}</h1>
+        <p><u>{{description}}</u> on {{date.strftime("%B %d, %Y")}}</p>
 
-    <img src="http://openweathermap.org/img/wn/{{icon}}@2x.png" />
+        <img src="http://openweathermap.org/img/wn/{{icon}}@2x.png" />
 
-    <ul>
-        <li>Description: {{description}}</li>
-        <li>Temperature: {{temp}}° {{units_letter}}</li>
-        <li>Min: {{min_temp}}° {{units_letter}}</li>
-        <li>Max: {{max_temp}}° {{units_letter}}</li>
-    </ul>
+        <h1>{{temp}}° {{units_letter}}</h1>
 
+        <p>Min: {{min_temp}}° {{units_letter}}</p>
+        <p>Max: {{max_temp}}° {{units_letter}}</p>
+    </div>
 
-    <img src="/graph/{{ lat }}/{{ lon }}/{{ units }}/{{ date.strftime('%Y-%m-%d') }}">
-
+    <div>
+        <img src="/graph/{{ lat }}/{{ lon }}/{{ units }}/{{ date.strftime('%Y-%m-%d') }}">
+    </div>
 </section>
 
 {% endblock %}
