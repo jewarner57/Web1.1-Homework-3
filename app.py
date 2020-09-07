@@ -147,7 +147,7 @@ def get_background_image(icon):
 
 
 def get_daily_stats(days):
-    """Takes an array of daily whether objects and
+    """Takes an array of daily weather objects and
     returns an array of simplified weather info"""
 
     days_info = []
