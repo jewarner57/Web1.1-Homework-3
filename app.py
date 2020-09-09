@@ -77,6 +77,7 @@ def results():
     # pp.pprint(result_json)
 
     try:
+        
         lat = result_json["coord"]["lat"]
         lon = result_json["coord"]["lon"]
 
@@ -84,29 +85,28 @@ def results():
         sunset_time = get_zone_time(result_json["sys"]["sunset"], lat, lon)
         current_time = get_zone_time(datetime.now().timestamp(), lat, lon)
 
-        icon = result_json["weather"][0]["icon"]
-        weather_image = get_background_image(icon)
-
-        context = {
-            "date": current_time,
-            "city": result_json["name"],
-            "description": result_json["weather"][0]["description"],
-            "temp": result_json["main"]["temp"],
-            "humidity": result_json["main"]["humidity"],
-            "wind_speed": result_json["wind"]["speed"],
-            "sunrise": sunrise_time,
-            "sunset": sunset_time,
-            "units_letter": get_letter_for_units(units),
-            "icon": icon,
-            "image": weather_image,
-        }
-
-        result = render_template("results.html", **context)
     except KeyError:
         context = {"error": "The city name you entered was not found."}
-        result = render_template("error.html", **context)
+        return render_template("error.html", **context)
 
-    return result
+    icon = result_json["weather"][0]["icon"]
+    weather_image = get_background_image(icon)
+
+    context = {
+        "date": current_time,
+        "city": result_json["name"],
+        "description": result_json["weather"][0]["description"],
+        "temp": result_json["main"]["temp"],
+        "humidity": result_json["main"]["humidity"],
+        "wind_speed": result_json["wind"]["speed"],
+        "sunrise": sunrise_time,
+        "sunset": sunset_time,
+        "units_letter": get_letter_for_units(units),
+        "icon": icon,
+        "image": weather_image,
+    }
+
+    return render_template("results.html", **context)
 
 
 def get_zone_time(date, lat, lon):
@@ -201,107 +201,109 @@ def get_lat_lon(city_name):
 
 @app.route("/historical_results")
 def historical_results():
+
+    """Displays historical weather forecast for a given day."""
+    city = request.args.get("city")
+    units = request.args.get("units")
+
     try:
-        """Displays historical weather forecast for a given day."""
-        city = request.args.get("city")
         date = request.args.get("date")
-        units = request.args.get("units")
         date_obj = datetime.strptime(date, "%Y-%m-%d")
         date_in_seconds = int(date_obj.timestamp())
-        latitude, longitude = get_lat_lon(city)
+    except ValueError:
+        context = {"error": "The date you entered is not valid"}
+        return render_template("error.html", **context)
 
-        url = "http://api.openweathermap.org/data/2.5/onecall/timemachine"
-        params = {
-            "lat": latitude,
-            "lon": longitude,
-            "units": units,
-            "dt": date_in_seconds,
-            "appid": API_KEY,
-        }
+    latitude, longitude = get_lat_lon(city)
 
-        result_json = requests.get(url, params=params).json()
+    url = "http://api.openweathermap.org/data/2.5/onecall/timemachine"
+    params = {
+        "lat": latitude,
+        "lon": longitude,
+        "units": units,
+        "dt": date_in_seconds,
+        "appid": API_KEY,
+    }
 
-        # Uncomment the line below to see the results of the API call!
-        # pp.pprint(result_json)
+    result_json = requests.get(url, params=params).json()
 
+    # Uncomment the line below to see the results of the API call!
+    # pp.pprint(result_json)
+
+    try:
         result_current = result_json["current"]
         result_hourly = result_json["hourly"]
+    except (KeyError):
+        context = {"error": "The city name you entered is not valid"}
+        return render_template("error.html", **context)
 
-        icon = result_current["weather"][0]["icon"]
-        weather_image = get_background_image(icon)
+    icon = result_current["weather"][0]["icon"]
+    weather_image = get_background_image(icon)
 
-        context = {
-            "city": city,
-            "date": date_obj,
-            "lat": latitude,
-            "lon": longitude,
-            "units": units,
-            "units_letter": get_letter_for_units(units),
-            "description": result_current["weather"][0]["description"],
-            "temp": result_current["temp"],
-            "min_temp": get_min_temp(result_hourly),
-            "max_temp": get_max_temp(result_hourly),
-            "icon": icon,
-            "image": weather_image,
-        }
+    context = {
+        "city": city,
+        "date": date_obj,
+        "lat": latitude,
+        "lon": longitude,
+        "units": units,
+        "units_letter": get_letter_for_units(units),
+        "description": result_current["weather"][0]["description"],
+        "temp": result_current["temp"],
+        "min_temp": get_min_temp(result_hourly),
+        "max_temp": get_max_temp(result_hourly),
+        "icon": icon,
+        "image": weather_image,
+    }
 
-        result = render_template("historical_results.html", **context)
-
-    except (ValueError, KeyError):
-        context = {"error": "The date you entered is not valid"}
-        result = render_template("error.html", **context)
-
-    return result
+    return render_template("historical_results.html", **context)
 
 
 @app.route("/forecast_results")
 def forecast_results():
+    
+    """Displays the 8 day weather forecast for the given location"""
+    city = request.args.get("city")
+    units = request.args.get("units")
+    latitude, longitude = get_lat_lon(city)
+
+    url = "http://api.openweathermap.org/data/2.5/onecall?"
+    params = {
+        "lat": latitude,
+        "lon": longitude,
+        "units": units,
+        "exclude": "hourly, minutely",
+        "appid": API_KEY,
+    }
+
     try:
-        """Displays the 8 day weather forecast for the given location"""
-        city = request.args.get("city")
-        units = request.args.get("units")
-        latitude, longitude = get_lat_lon(city)
-
-        url = "http://api.openweathermap.org/data/2.5/onecall?"
-        params = {
-            "lat": latitude,
-            "lon": longitude,
-            "units": units,
-            "exclude": "hourly, minutely",
-            "appid": API_KEY,
-        }
-
         result_json = requests.get(url, params=params).json()
         result_current = result_json["current"]
         result_daily = result_json["daily"]
         day_list = get_daily_stats(result_daily)
-
-        # Uncomment the line below to see the results of the API call!
-        # p.pprint(result_json)
-
         current_time = get_zone_time(datetime.now().timestamp(), latitude, longitude)
-
-        icon = result_current["weather"][0]["icon"]
-        weather_image = get_background_image(icon)
-
-        context = {
-            "date": current_time,
-            "city": city,
-            "description": result_current["weather"][0]["description"],
-            "temp": result_current["temp"],
-            "units_letter": get_letter_for_units(units),
-            "icon": icon,
-            "image": weather_image,
-            "day_list": day_list,
-        }
-
-        result = render_template("forecast_results.html", **context)
-
     except (ValueError, KeyError):
         context = {"error": "The city name you entered was not found."}
-        result = render_template("error.html", **context)
+        return render_template("error.html", **context)
 
-    return result
+    # Uncomment the line below to see the results of the API call!
+    # p.pprint(result_json)
+
+
+    icon = result_current["weather"][0]["icon"]
+    weather_image = get_background_image(icon)
+
+    context = {
+        "date": current_time,
+        "city": city,
+        "description": result_current["weather"][0]["description"],
+        "temp": result_current["temp"],
+        "units_letter": get_letter_for_units(units),
+        "icon": icon,
+        "image": weather_image,
+        "day_list": day_list,
+    }
+
+    return render_template("forecast_results.html", **context)
 
 
 ################################################################################
